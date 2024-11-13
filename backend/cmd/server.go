@@ -29,7 +29,9 @@ func (a *ApiServer) Run() error {
 			"message": "working",
 		})
 	})
+
 	api := router.Group("api/v1")
+
 	userStore := users.NewStore(a.store)
 
 	userRoutes := users.NewHandler(*userStore)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"referalsystem/internal/types"
 	"strconv"
 	"time"
 
@@ -104,6 +105,70 @@ func (s *service) Health() map[string]string {
 
 	return stats
 }
+func (s *service) FindUserByEmail(email string) (*types.User, error) {
+	rows, err := s.db.Query("SELECT * FROM refusers WHERE email = $1", email)
+	if err != nil {
+		return nil, err
+	}
+	us := new(types.User)
+	for rows.Next() {
+		us, err = scanUsersFromRows(rows)
+		if err != nil {
+			return nil, err
+		}
+
+	}
+	if us.ID == "" {
+		return nil, fmt.Errorf("user not found")
+	}
+	return us, nil
+}
+func (s *service) FindUserByID(id string) (*types.User, error) {
+	rows, err := s.db.Query("SELECT * FROM refusers WHERE id = $1", id)
+	if err != nil {
+		return nil, err
+	}
+	us := new(types.User)
+	for rows.Next() {
+		us, err = scanUsersFromRows(rows)
+		if err != nil {
+			return nil, err
+		}
+
+	}
+	if us.ID == "" {
+		return nil, fmt.Errorf("user not found")
+	}
+	return us, nil
+}
+func (s *service) CreateUser(user types.User) (string, error) {
+	_, err := s.db.Exec("INSERT INTO refusers (name, email, password) VALUES ($1, $2, $3)", user.Name, user.Email, user.Password)
+	if err != nil {
+
+		return "", err
+	}
+	u, err := s.FindUserByEmail(user.Email)
+	if err != nil {
+		return "", err
+	}
+	println(u.ID)
+	return u.ID, nil
+}
+func (s *service) EditPoints(id string, points int) error {
+	u, err := s.FindUserByID(id)
+	if err != nil {
+		return err
+	}
+	p := u.Points
+	newPoints := p + points
+
+	_, err = s.db.Exec("UPDATE refusers SET points = $1 WHERE id = $2 ", newPoints, id)
+	if err != nil {
+		return err
+	}
+	return nil
+
+}
 
 // Close closes the database connection.
 // It logs a message indicating the disconnection from the specific database.
@@ -112,4 +177,20 @@ func (s *service) Health() map[string]string {
 func (s *service) Close() error {
 	log.Printf("Disconnected from database: %s", database)
 	return s.db.Close()
+}
+
+func scanUsersFromRows(row *sql.Rows) (*types.User, error) {
+	user := new(types.User)
+	err := row.Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Password,
+		&user.Points,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
 }

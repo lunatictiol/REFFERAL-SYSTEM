@@ -7,3 +7,14 @@ type User struct {
 	Password string `json:"password"` // Text field
 	Points   int    `json:"points"`   // Integer with a default value
 }
+
+type RegisterUserPayload struct {
+	Name     string `json:"name"`     // Text field
+	Email    string `json:"email"`    // Unique text field
+	Password string `json:"password"` // Text field
+}
+
+type LoginUserPayload struct {
+	Email    string `json:"email"`    // Unique text field
+	Password string `json:"password"` // Text field
+}

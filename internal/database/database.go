@@ -23,6 +23,10 @@ type Service interface {
 	// Close terminates the database connection.
 	// It returns an error if the connection cannot be closed.
 	Close() error
+	FindUserByEmail(email string) (*types.User, error)
+	FindUserByID(id string) (*types.User, error)
+	CreateUser(user types.User) (string, error)
+	EditPoints(id string, points int) error
 }
 
 type service struct {
@@ -106,32 +110,38 @@ func (s *service) Health() map[string]string {
 	return stats
 }
 func (s *service) FindUserByEmail(email string) (*types.User, error) {
-	rows, err := s.db.Query("SELECT * FROM refusers WHERE email = $1", email)
+	user := new(types.User)
+	err := s.db.QueryRow("SELECT * FROM refusers WHERE email =$1 ", email).Scan(
+		&user.ID,
+		&user.Name,
+		&user.Email,
+		&user.Password,
+		&user.Points,
+	)
+
 	if err != nil {
+		fmt.Println("here i fucked s")
+		fmt.Println(err)
 		return nil, err
 	}
-	us := new(types.User)
-	for rows.Next() {
-		us, err = scanUsersFromRows(rows)
-		if err != nil {
-			return nil, err
-		}
-
-	}
-	if us.ID == "" {
+	if user.ID == "" {
+		fmt.Printf("hereeeeeee")
 		return nil, fmt.Errorf("user not found")
 	}
-	return us, nil
+	println(user.Email)
+	return user, nil
 }
 func (s *service) FindUserByID(id string) (*types.User, error) {
-	rows, err := s.db.Query("SELECT * FROM refusers WHERE id = $1", id)
+	rows, err := s.db.Query("SELECT * FROM refusers WHERE (id) value ($1)", id)
 	if err != nil {
+		fmt.Println("i fuxcked up")
 		return nil, err
 	}
 	us := new(types.User)
 	for rows.Next() {
 		us, err = scanUsersFromRows(rows)
 		if err != nil {
+			fmt.Println("i fuxcked up")
 			return nil, err
 		}
 
@@ -144,11 +154,12 @@ func (s *service) FindUserByID(id string) (*types.User, error) {
 func (s *service) CreateUser(user types.User) (string, error) {
 	_, err := s.db.Exec("INSERT INTO refusers (name, email, password) VALUES ($1, $2, $3)", user.Name, user.Email, user.Password)
 	if err != nil {
-
+		fmt.Println(err)
 		return "", err
 	}
 	u, err := s.FindUserByEmail(user.Email)
 	if err != nil {
+		fmt.Println("Heree toooo")
 		return "", err
 	}
 	println(u.ID)
@@ -188,7 +199,6 @@ func scanUsersFromRows(row *sql.Rows) (*types.User, error) {
 		&user.Password,
 		&user.Points,
 	)
-
 	if err != nil {
 		return nil, err
 	}

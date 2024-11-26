@@ -27,6 +27,8 @@ type Service interface {
 	FindUserByID(id string) (*types.User, error)
 	CreateUser(user types.User) (string, error)
 	EditPoints(id string, points int) error
+	CheckReferralCodeExists(code string) (bool, error)
+	InsertReferralCodeExists(code string, userId string) error
 }
 
 type service struct {
@@ -109,6 +111,25 @@ func (s *service) Health() map[string]string {
 
 	return stats
 }
+
+func (s *service) CheckReferralCodeExists(code string) (bool, error) {
+	var exists bool
+	query := `SELECT EXISTS(SELECT 1 FROM "referals" WHERE "referalcode" = $1)`
+	err := s.db.QueryRow(query, code).Scan(&exists)
+	if err != nil {
+		return false, fmt.Errorf("database query failed: %w", err)
+	}
+	return exists, nil
+}
+func (s *service) InsertReferralCodeExists(code string, userId string) error {
+
+	_, err := s.db.Exec(`INSERT INTO referals (referalcode, referedby) VALUES ($1, $2)`, code, userId)
+	if err != nil {
+		return fmt.Errorf("database query failed: %w", err)
+	}
+	return nil
+}
+
 func (s *service) FindUserByEmail(email string) (*types.User, error) {
 	user := new(types.User)
 	err := s.db.QueryRow("SELECT * FROM refusers WHERE email =$1 ", email).Scan(
@@ -165,6 +186,7 @@ func (s *service) CreateUser(user types.User) (string, error) {
 	println(u.ID)
 	return u.ID, nil
 }
+
 func (s *service) EditPoints(id string, points int) error {
 	u, err := s.FindUserByID(id)
 	if err != nil {

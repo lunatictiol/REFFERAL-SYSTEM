@@ -18,3 +18,8 @@ type LoginUserPayload struct {
 	Email    string `json:"email"`    // Unique text field
 	Password string `json:"password"` // Text field
 }
+
+type ReferRequest struct {
+	ServiceID string `json:"service_id" binding:"required"`
+	UserID    string `json:"user_id" binding:"required"`
+}

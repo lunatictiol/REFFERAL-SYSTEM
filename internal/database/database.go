@@ -28,7 +28,9 @@ type Service interface {
 	CreateUser(user types.User) (string, error)
 	EditPoints(id string, points int) error
 	CheckReferralCodeExists(code string) (bool, error)
-	InsertReferralCodeExists(code string, userId string) error
+	CheckReferralData(code string) (types.ReferalData, error)
+	InsertReferralCode(code string, userId string) error
+	ChangeReferalCodeUseStatus(code string) error
 }
 
 type service struct {
@@ -121,12 +123,38 @@ func (s *service) CheckReferralCodeExists(code string) (bool, error) {
 	}
 	return exists, nil
 }
-func (s *service) InsertReferralCodeExists(code string, userId string) error {
+func (s *service) CheckReferralData(code string) (types.ReferalData, error) {
+	var referal types.ReferalData
+	fmt.Println(code)
+	query := `SELECT * FROM referals WHERE referalcode = $1`
+	err := s.db.QueryRow(query, code).Scan(
+		&referal.Id,
+		&referal.ReferalCode,
+		&referal.ReferedBy,
+		&referal.IsUsed,
+	)
+	if err != nil {
+		return types.ReferalData{}, fmt.Errorf("database query failed: %w", err)
+	}
+
+	return referal, nil
+}
+func (s *service) InsertReferralCode(code string, userId string) error {
 
 	_, err := s.db.Exec(`INSERT INTO referals (referalcode, referedby) VALUES ($1, $2)`, code, userId)
 	if err != nil {
 		return fmt.Errorf("database query failed: %w", err)
 	}
+	return nil
+}
+
+func (s *service) ChangeReferalCodeUseStatus(code string) error {
+
+	_, err := s.db.Exec(`UPDATE referals SET isUsed = true WHERE referalcode = $1`, code)
+	if err != nil {
+		return fmt.Errorf("database query failed: %w", err)
+	}
+
 	return nil
 }
 
@@ -153,7 +181,7 @@ func (s *service) FindUserByEmail(email string) (*types.User, error) {
 	return user, nil
 }
 func (s *service) FindUserByID(id string) (*types.User, error) {
-	rows, err := s.db.Query("SELECT * FROM refusers WHERE (id) value ($1)", id)
+	rows, err := s.db.Query("SELECT * FROM refusers WHERE id= $1", id)
 	if err != nil {
 		fmt.Println("i fuxcked up")
 		return nil, err
@@ -190,6 +218,7 @@ func (s *service) CreateUser(user types.User) (string, error) {
 func (s *service) EditPoints(id string, points int) error {
 	u, err := s.FindUserByID(id)
 	if err != nil {
+		println("hereeeeeeeee")
 		return err
 	}
 	p := u.Points
@@ -197,6 +226,7 @@ func (s *service) EditPoints(id string, points int) error {
 
 	_, err = s.db.Exec("UPDATE refusers SET points = $1 WHERE id = $2 ", newPoints, id)
 	if err != nil {
+		println("hereeeeeeeeezzzzzzz")
 		return err
 	}
 	return nil

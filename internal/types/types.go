@@ -9,9 +9,17 @@ type User struct {
 }
 
 type RegisterUserPayload struct {
-	Name     string `json:"name"`     // Text field
-	Email    string `json:"email"`    // Unique text field
-	Password string `json:"password"` // Text field
+	Name        string `json:"name"`     // Text field
+	Email       string `json:"email"`    // Unique text field
+	Password    string `json:"password"` // Text field
+	ReferalCode string `json:"referal_code"`
+}
+
+type ReferalData struct {
+	Id          string
+	ReferalCode string
+	ReferedBy   string
+	IsUsed      bool
 }
 
 type LoginUserPayload struct {

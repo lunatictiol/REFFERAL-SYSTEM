@@ -45,13 +45,6 @@ func (s *Server) healthHandler(c *gin.Context) {
 
 func (s *Server) RegisterUser(c *gin.Context) {
 	var payload types.RegisterUserPayload
-	refered := c.Query("refered")
-
-	if refered == "true" {
-		//todo
-	}
-
-	// get body
 	err := c.ShouldBindJSON(&payload)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, map[string]string{
@@ -64,11 +57,50 @@ func (s *Server) RegisterUser(c *gin.Context) {
 	_, err = s.db.FindUserByEmail(payload.Email)
 	if err == nil {
 		c.JSON(http.StatusBadRequest, map[string]string{
-			"message": "cannot create user at the momentssss",
+			"message": "email already exists",
 		})
 		return
 	}
+	refered := c.Query("refered")
 
+	if refered == "true" {
+		//todo
+		referalCode := payload.ReferalCode
+		ref, err := s.db.CheckReferralData(referalCode)
+		if err != nil {
+
+			c.JSON(http.StatusBadRequest, map[string]string{
+				"message": "referal error",
+				"details": err.Error(),
+			})
+			return
+		}
+		if ref.IsUsed {
+			c.JSON(http.StatusBadRequest, map[string]string{
+				"message": "referal error",
+				"details": "the code has been used",
+			})
+			return
+		} else {
+			err = s.db.EditPoints(ref.ReferedBy, 10)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, map[string]string{
+					"message": "referal error",
+					"details": err.Error(),
+				})
+				return
+			}
+			err = s.db.ChangeReferalCodeUseStatus(referalCode)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, map[string]string{
+					"message": "referal error",
+					"details": "cannot update referal status",
+				})
+				return
+			}
+		}
+
+	}
 	//hash password
 	hashedPassword, err := utils.HashPassword(payload.Password)
 	if err != nil {
@@ -194,7 +226,7 @@ func GenerateReferralCode(serviceID, userId string, resultChan chan<- string, er
 		}
 		if !exists {
 
-			err = s.db.InsertReferralCodeExists(referralCode, userId)
+			err = s.db.InsertReferralCode(referralCode, userId)
 			if err != nil {
 				errorChan <- fmt.Errorf("failed to insert referral code: %w", err)
 				return

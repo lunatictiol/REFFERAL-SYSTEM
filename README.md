@@ -50,7 +50,7 @@ Welcome to the **Go Referral System API**! This project is a full-stack applicat
 1. Clone the repository:
    ```bash
    git clone <repository_url>
-   cd go-referral-system-api
+   cd referral-system
    ```
 2. Install dependencies:
    ```bash
@@ -64,10 +64,6 @@ Welcome to the **Go Referral System API**! This project is a full-stack applicat
    BLUEPRINT_DB_USERNAME=username 
    BLUEPRINT_DB_PASSWORD=password
    BLUEPRINT_DB_SCHEMA=db schema
-   ```
-4. Run the API:
-   ```bash
-   make run 
    ```
 
 ### Frontend Setup
@@ -83,7 +79,10 @@ Welcome to the **Go Referral System API**! This project is a full-stack applicat
    ```bash
    npm start
    ```
-
+4. Run the project:
+   ```bash
+   make run
+   ```
 ---
 
 ## API Endpoints
@@ -106,7 +105,7 @@ Welcome to the **Go Referral System API**! This project is a full-stack applicat
 | `id`             | UUID        | Unique identifier            |
 | `username`       | VARCHAR     | User's name                  |
 | `email`          | VARCHAR     | User's email                 |
-| `password_hash`  | VARCHAR     | Hashed password              |
+| `password`       | VARCHAR     | Hashed password              |
 | `points`         | INT         | Total earned referral points |
 
 ### Referrals Table
@@ -114,7 +113,7 @@ Welcome to the **Go Referral System API**! This project is a full-stack applicat
 |------------------|-------------|------------------------------|
 | `id`             | UUID        | Unique identifier            |
 | `referrer_code`  | Text        | referal code                 |
-| `referred_by`    | UUID        | Referred user's ID           |
+| `referred_by`    | UUID        | referrer user's ID           |
 | `used`           | BOOl        | Referral code is used        |
 
 ---

@@ -75,11 +75,7 @@ Welcome to the **Go Referral System API**! This project is a full-stack applicat
    ```bash
    npm install
    ```
-3. Start the development server:
-   ```bash
-   npm start
-   ```
-4. Run the project:
+### Run the project:
    ```bash
    make run
    ```
